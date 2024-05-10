@@ -6,6 +6,6 @@ pub struct FormData {
     name: String,
 }
 
-pub(crate) async fn subscribe(_form: web::Form<FormData>) -> HttpResponse {
+pub async fn subscribe(_form: web::Form<FormData>) -> HttpResponse {
     HttpResponse::Ok().finish()
 }

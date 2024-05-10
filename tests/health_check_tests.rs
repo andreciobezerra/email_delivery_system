@@ -1,6 +1,7 @@
 use std::net::TcpListener;
 
-use email_delivery_system::startup::run;
+use email_delivery_system::{configs::get_configs, startup::run};
+use sqlx::{Connection, PgConnection};
 
 fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind a random port.");
@@ -29,17 +30,31 @@ async fn health_check_works() {
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let app_address = spawn_app();
+    let configuration = get_configs().expect("Failed to read configuration");
+    let connection_string = configuration.database.connection_string();
     let client = reqwest::Client::new();
+    let mut connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Failed to Connect to Postgres");
+
     let payload = "name=xablau%20silva&email=xablauzin%40gmail.com";
     let response = client
         .post(format!("{}/subscriptions", &app_address))
-        .header("Content-Type", "application/x-www-form-urlenconded")
+        .header("Content-Type", "application/x-www-form-urlencoded")
         .body(payload)
         .send()
         .await
         .expect("Failed to execute request");
 
     assert_eq!(200, response.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
+        .fetch_one(&mut connection)
+        .await
+        .expect("Failed to fetch saved subscription.");
+
+    assert_eq!(saved.email, "xablauzin@gmail.com");
+    assert_eq!(saved.name, "xablau silva");
 }
 
 #[tokio::test]
