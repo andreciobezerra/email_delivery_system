@@ -66,12 +66,7 @@ async fn health_check_works() {
 #[tokio::test]
 async fn subscribe_returns_a_201_for_valid_form_data() {
     let app = spawn_app().await;
-    let configuration = get_configs().expect("Failed to read configuration");
-    let connection_string = configuration.database.connection_string();
     let client = reqwest::Client::new();
-    let mut connection = PgConnection::connect(&connection_string)
-        .await
-        .expect("Failed to Connect to Postgres");
 
     let payload = "name=xablau%20silva&email=xablauzin%40gmail.com";
     let response = client
@@ -85,7 +80,7 @@ async fn subscribe_returns_a_201_for_valid_form_data() {
     assert_eq!(201, response.status().as_u16());
 
     let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
-        .fetch_one(&mut connection)
+        .fetch_one(&app.db_pool)
         .await
         .expect("Failed to fetch saved subscription.");
 
