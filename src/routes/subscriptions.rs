@@ -20,9 +20,12 @@ pub async fn subscribe(form: web::Form<FormData>, db_pool: web::Data<PgPool>) ->
     .await;
 
     match query {
-        Ok(_) => HttpResponse::Created().finish(),
+        Ok(_) => {
+            log::info!("New subscriber had been saved");
+            HttpResponse::Created().finish()
+        }
         Err(e) => {
-            println!("Failed to execute query: {}", e);
+            log::error!("Failed to execute query: {:?}", e);
             HttpResponse::InternalServerError().finish()
         }
     }
