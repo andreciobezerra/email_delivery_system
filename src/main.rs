@@ -1,6 +1,7 @@
 use std::net::TcpListener;
 
 use email_delivery_system::configs::get_configs;
+use email_delivery_system::email_client::EmailClient;
 use email_delivery_system::startup::run;
 use email_delivery_system::telemetry::{get_subscriber, init_subscriber};
 use sqlx::PgPool;
@@ -18,5 +19,10 @@ async fn main() -> Result<(), std::io::Error> {
         .await
         .expect("Failed to connect to Postgres");
 
-    run(listener, db_connection_pool)?.await
+    let email_client = EmailClient::new(
+        &configs.email_client.base_url,
+        &configs.email_client.sender().expect("Invalid sender email"),
+    );
+
+    run(listener, db_connection_pool, email_client)?.await
 }
